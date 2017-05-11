@@ -2,8 +2,6 @@ var Fs = require('fire-fs');
 var Path = require('fire-path');
 
 global.__app = {
-    path: __dirname,
-
     initCommander: function ( commander ) {
         // TODO:
     },
@@ -11,9 +9,7 @@ global.__app = {
     init: function ( options, cb ) {
         // initialize ./.settings
         var settingsPath = Path.join(Editor.appPath, '.settings');
-        if ( !Fs.existsSync(settingsPath) ) {
-            Fs.makeTreeSync(settingsPath);
-        }
+        Fs.ensureDirSync(settingsPath);
         Editor.registerProfilePath( 'local', settingsPath );
 
         // TODO: load your profile, and disable packages here

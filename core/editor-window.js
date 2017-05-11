@@ -66,7 +66,7 @@ function EditorWindow ( name, options ) {
     this.nativeWin.on ( 'focus', function ( event ) {
         if ( !Editor.focused ) {
             Editor.focused = true;
-            // Editor.emit('focus'); // TODO:
+            Editor.events.emit('focus');
         }
     }.bind(this) );
 
@@ -77,7 +77,7 @@ function EditorWindow ( name, options ) {
         setImmediate( function () {
             if ( !BrowserWindow.getFocusedWindow() ) {
                 Editor.focused = false;
-                // Editor.emit('blur'); // TODO:
+                Editor.events.emit('blur');
             }
         }.bind(this));
 
@@ -499,7 +499,7 @@ EditorWindow.prototype.sendToPage = function () {
  * @param {string} request - the request to send
  * @param {...*} [arg] - whatever arguments the request needs
  * @param {function} reply - the callback used to handle replied arguments
- * @return {number} The session id can be used in Editor.Window.cancelRequestToCore
+ * @return {number} The session id can be used in Editor.Window.cancelRequestToPage
  */
 EditorWindow.prototype.sendRequestToPage = function (request) {
     'use strict';

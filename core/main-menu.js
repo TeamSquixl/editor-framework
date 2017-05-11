@@ -154,7 +154,7 @@ function getDefaultMainMenu () {
             submenu: [
                 {
                     label: 'Command Palette',
-                    accelerator: 'CmdOrCtrl+P',
+                    accelerator: 'CmdOrCtrl+:',
                     click: function() {
                         Editor.mainWindow.focus();
                         Editor.sendToMainWindow('cmdp:show');

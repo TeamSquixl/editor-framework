@@ -1,0 +1,10 @@
+:host {
+    display: block;
+    position: relative;
+    min-width: 100px;
+    min-height: 100px;
+}
+
+.wrapper {
+    background: #333;
+}

@@ -1,4 +1,8 @@
-# Create Your Package
+---
+title: Create Package
+category: editor
+permalinks: editor/packages/create-package
+---
 
 Editor Framework loads package before App runs. By default it loads packages from `editor-framework://builtin/` and `~/.{app-name}/packages/`. If you are working with [Fireball](https://github.com/fireball-x/fireball), then it will load packages from `fireball/builtin` and `~/.fireball/packages` folder.
 

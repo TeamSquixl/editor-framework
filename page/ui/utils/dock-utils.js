@@ -93,6 +93,7 @@ EditorUI.DockUtils = (function () {
 
         if ( Editor.sendToWindows ) {
             Editor.sendToWindows('panel:dragstart', _draggingInfo, Editor.selfExcluded);
+            Editor.sendToWindows('editor:dragstart');
         }
     };
 
@@ -409,10 +410,15 @@ EditorUI.DockUtils = (function () {
         _reset();
         if ( Editor.sendToWindows ) {
             Editor.sendToWindows( 'panel:dragend', Editor.selfExcluded );
+            Editor.sendToWindows( 'editor:dragend' );
         }
     });
 
     document.addEventListener('drop', function ( event ) {
+        if ( Editor.sendToWindows ) {
+            Editor.sendToWindows( 'editor:dragend' );
+        }
+
         event.preventDefault();
         event.stopPropagation();
 

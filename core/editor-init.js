@@ -6,6 +6,7 @@ var Winston = require('winston');
 var Globby = require('globby');
 var Chokidar = require('chokidar');
 var Async = require('async');
+var App = require('app');
 
 // ==========================
 // console log API
@@ -307,6 +308,10 @@ Editor.quit = function () {
     for ( var i = 0; i < winlist.length; ++i ) {
         winlist[i].close();
     }
+
+    Editor.events.emit('quit');
+
+    App.quit();
 };
 
 Editor.loadPackagesAt = function ( path, cb ) {
@@ -319,6 +324,7 @@ Editor.loadPackagesAt = function ( path, cb ) {
     var paths = Globby.sync( path + '/*/package.json' );
 
     Async.eachSeries( paths, function ( path, done ) {
+        path = Path.normalize(path);
         var packagePath = Path.dirname(path);
         Editor.Package.load( packagePath, function ( err ) {
             if ( err ) {
@@ -345,6 +351,7 @@ Editor.loadAllPackages = function ( cb ) {
     var paths = Globby.sync( src );
 
     Async.eachSeries( paths, function ( path, done ) {
+        path = Path.normalize(path);
         var packagePath = Path.dirname(path);
         Editor.Package.load( packagePath, function ( err ) {
             if ( err ) {
@@ -358,9 +365,112 @@ Editor.loadAllPackages = function ( cb ) {
 };
 
 /**
+ * Require module through url path
+ * @method require
+ * @param {string} url
+ */
+Editor.require = function ( url ) {
+    return require( Editor.url(url) );
+};
+
+/**
+ * Spawn child process that start from console
+ * @method execSpawn
+ * @param {string} command
+ * @param {object} options
+ */
+Editor.execSpawn = function ( command, options ) {
+    var file, args;
+    options = options || {};
+
+    if (process.platform === 'win32') {
+        file = 'cmd.exe';
+        args = ['/s', '/c', '"' + command + '"'];
+        options.windowsVerbatimArguments = true;
+    } else {
+        file = '/bin/sh';
+        args = ['-c', command];
+        options.windowsVerbatimArguments = false;
+    }
+
+    var spawn = require('child_process').spawn;
+    return spawn(file, args, options);
+};
+
+function _reloadPackages ( reloadInfos, cb ) {
+    Async.each( reloadInfos, function ( info, done ) {
+        var packageInfo = Editor.Package.packageInfo(info.path);
+        if ( !packageInfo ) {
+            done();
+            return;
+        }
+
+        Async.series([
+            function ( next ) {
+                if ( !packageInfo.build ) {
+                    next();
+                    return;
+                }
+
+                Editor.log( 'Rebuilding ' + packageInfo.name );
+                Editor.Package.build( packageInfo._path, next );
+            },
+
+            function ( next ) {
+                var testerWin = Editor.Panel.findWindow('tester.panel');
+
+                // reload test
+                if ( info.reloadTest ) {
+                    if ( testerWin ) {
+                        testerWin.sendToPage('tester:run-tests', packageInfo.name);
+                    }
+                    next();
+                    return;
+                }
+
+                // reload page
+                if ( info.reloadPage ) {
+                    for ( var panelName in packageInfo.panels ) {
+                        var panelID = packageInfo.name + '.' + panelName;
+                        Editor.sendToWindows( 'panel:out-of-date', panelID );
+                    }
+
+                    if ( testerWin ) {
+                        testerWin.sendToPage('tester:run-tests', packageInfo.name);
+                    }
+                    next();
+                    return;
+                }
+
+                // reload core
+                if ( info.reloadCore ) {
+                    Editor.Package.reload(packageInfo._path, {
+                        rebuild: false
+                    });
+                    next();
+                    return;
+                }
+
+                next();
+            },
+        ], function ( err ) {
+            if ( err ) {
+                Editor.error( 'Failed to reload package %s: %s', packageInfo.name, err.message );
+            }
+
+            done();
+        });
+    }, function ( err ) {
+        if ( cb ) cb ();
+    });
+}
+
+/**
  * Watch packages
  * @method watchPackages
  */
+var _watchDebounceID = null;
+var _packageReloadInfo = [];
 Editor.watchPackages = function ( cb ) {
     //
     if ( Editor._packagePathList.length === 0 ) {
@@ -376,7 +486,7 @@ Editor.watchPackages = function ( cb ) {
         }
     }
     _packageWatcher = Chokidar.watch(src, {
-        ignored: [/[\/\\]\./, /[\/\\]bin/],
+        ignored: [/[\/\\]\./, /[\/\\]bin/, /[\/\\]test[\/\\]fixtures/, /[\/\\]test[\/\\]playground/],
         ignoreInitial: true,
         persistent: true,
     });
@@ -395,60 +505,58 @@ Editor.watchPackages = function ( cb ) {
         _packageWatcher.unwatch(path);
     })
     .on('change', function (path) {
+        // NOTE: this is not 100% safe, because 50ms debounce still can have multiple
+        //       same packages building together, to avoid this, try to use Async.queue
+
         var packageInfo = Editor.Package.packageInfo(path);
-        if ( packageInfo ) {
-            Async.series([
-                function ( next ) {
-                    if ( packageInfo.build ) {
-                        Editor.log( 'Rebuilding ' + packageInfo.name );
-                        Editor.Package.build( packageInfo._path, next );
-                    }
-                    else {
-                        next ();
-                    }
-                },
-
-                function ( next ) {
-                    var testerWin = Editor.Panel.findWindow('tester.panel');
-
-                    // reload test
-                    var testPath = Path.join(packageInfo._path, 'test');
-                    if ( Path.contains(testPath , path) ) {
-                        if ( testerWin ) {
-                            testerWin.sendToPage('tester:run-tests', packageInfo.name);
-                        }
-                        next();
-                        return;
-                    }
-
-                    // reload page
-                    var pageFolders = ['page', 'panel', 'widget'];
-                    if (pageFolders.some( function ( name ) {
-                        return Path.contains( Path.join(packageInfo._path, name), path );
-                    })) {
-                        for ( var panelName in packageInfo.panels ) {
-                            var panelID = packageInfo.name + '.' + panelName;
-                            Editor.sendToWindows( 'panel:out-of-date', panelID );
-                        }
-
-                        if ( testerWin ) {
-                            testerWin.sendToPage('tester:run-tests', packageInfo.name);
-                        }
-                        next();
-                        return;
-                    }
-
-                    // reload core
-                    Editor.Package.reload(packageInfo._path, {
-                        rebuild: false
-                    });
-                    next();
-                },
-            ], function ( err ) {
-                if ( err )
-                    Editor.error( 'Failed to reload package %s: %s', packageInfo.name, err.message );
-            });
+        if ( !packageInfo ) {
+            return;
         }
+
+        //
+        var reloadInfo;
+        for ( var i = 0; i < _packageReloadInfo.length; ++i ) {
+            if ( _packageReloadInfo[i].path === packageInfo._path ) {
+                reloadInfo = _packageReloadInfo[i];
+                break;
+            }
+        }
+
+        if ( !reloadInfo ) {
+            reloadInfo = {
+                path: packageInfo._path,
+                reloadTest: false,
+                reloadPage: false,
+                reloadCore: false,
+            };
+            _packageReloadInfo.push(reloadInfo);
+        }
+
+        // reload test
+        if ( Path.contains(Path.join(packageInfo._path, 'test') , path) ) {
+            reloadInfo.reloadTest = true;
+        }
+        // reload page
+        else if ( Path.contains(Path.join(packageInfo._path, 'page') , path) ||
+                  Path.contains(Path.join(packageInfo._path, 'panel') , path) ||
+                  Path.contains(Path.join(packageInfo._path, 'widget') , path) ) {
+            reloadInfo.reloadPage = true;
+        }
+        // reload core
+        else {
+            reloadInfo.reloadCore = true;
+        }
+
+        // debounce write for 50ms
+        if ( _watchDebounceID ) {
+            clearTimeout(_watchDebounceID);
+            _watchDebounceID = null;
+        }
+        _watchDebounceID = setTimeout(function () {
+            _reloadPackages(_packageReloadInfo);
+            _packageReloadInfo = [];
+            _watchDebounceID = null;
+        }, 50);
     })
     .on('error', function (error) {
         Editor.error('Package Watcher Error: %s', error.message);

@@ -21,8 +21,7 @@ EditorUI.droppable = (function () {
             this._dragenterCnt = 0;
 
             dropAreaElement.addEventListener( 'dragenter', function (event) {
-                // NOTE: do not stopPropagation, otherwise dock-utils can not catch the event
-                // event.stopPropagation();
+                event.stopPropagation();
 
                 ++this._dragenterCnt;
 
@@ -35,15 +34,14 @@ EditorUI.droppable = (function () {
                         this.fire('drop-area-enter', {
                             dragType: dragType,
                             dragItems: dragItems,
-                            dataTransfer: event.dataTransfer
+                            dataTransfer: event.dataTransfer,
                         });
                     });
                 }
             }.bind(this));
 
             dropAreaElement.addEventListener( 'dragleave', function (event) {
-                // NOTE: do not stopPropagation, otherwise dock-utils can not catch the event
-                // event.stopPropagation();
+                event.stopPropagation();
 
                 --this._dragenterCnt;
 
@@ -56,7 +54,7 @@ EditorUI.droppable = (function () {
                         this.fire('drop-area-leave', {
                             dragType: dragType,
                             dragItems: dragItems,
-                            dataTransfer: event.dataTransfer
+                            dataTransfer: event.dataTransfer,
                         });
                     });
                 }
@@ -78,7 +76,12 @@ EditorUI.droppable = (function () {
                     this.fire('drop-area-accept', {
                         dragType: dragType,
                         dragItems: dragItems,
-                        dataTransfer: event.dataTransfer
+                        dataTransfer: event.dataTransfer,
+                        dropTarget: Polymer.dom(event).localTarget,
+                        clientX: event.clientX,
+                        clientY: event.clientY,
+                        offsetX: event.offsetX,
+                        offsetY: event.offsetY,
                     });
                 });
             }.bind(this));

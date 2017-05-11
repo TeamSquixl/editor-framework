@@ -144,19 +144,22 @@ EditorUI.focusable = (function () {
         // NOTE: do not overwrite these events, instead listen to 'on-focused-changed'
 
         _onFocus: function ( event ) {
-            this._losingFocus = false;
+            // DISABLE
+            // this._losingFocus = false;
+
             this._setFocused(true);
         },
 
         _onBlur: function ( event ) {
-            this._losingFocus = true;
-            // NOTE: this is because user may mouse-click on the same target,
-            //       the browser will send blur, focus event without reason
-            this.async(function () {
-                if ( this._losingFocus ) {
-                    this._setFocused(false);
-                }
-            }.bind(this),1);
+            // DISABLE
+            // this._losingFocus = true;
+            // this.async(function () {
+            //     if ( this._losingFocus ) {
+            //         this._setFocused(false);
+            //     }
+            // }.bind(this),1);
+
+            this._setFocused(false);
         },
 
         setFocus: function () {

@@ -22,25 +22,20 @@ global.Editor = {};
      * @type object
      */
     Editor.App = __app;
-
-    if ( !__app.path ) {
-        console.error( '\'__app.path\' is undefined. please set `path: __dirname` manually in your __app structure.');
-        process.exit(1);
-        return;
-    }
-    /**
-     * The current app.js running directory.
-     * @property cwd
-     * @type string
-     */
-    Editor.appPath = __app.path;
 })();
+
+var App = require('app');
+/**
+ * The current app.js running directory.
+ * @property appPath
+ * @type string
+ */
+Editor.appPath = App.getAppPath();
 
 // ---------------------------
 // load modules
 // ---------------------------
 
-var App = require('app');
 var Path = require('fire-path');
 var Fs = require('fire-fs');
 var Url = require('fire-url');
@@ -104,15 +99,16 @@ Editor.frameworkPath = __dirname;
 Editor.appHome = Path.join( App.getPath('home'), '.' + Editor.name );
 
 // initialize ~/.{app-name}
-if ( !Fs.existsSync(Editor.appHome) ) {
-    Fs.makeTreeSync(Editor.appHome);
-}
+Fs.ensureDirSync(Editor.appHome);
 
 // initialize ~/.{app-name}/local/
 var settingsPath = Path.join(Editor.appHome, 'local');
 if ( !Fs.existsSync(settingsPath) ) {
     Fs.mkdirSync(settingsPath);
 }
+
+var EventEmitter = require('events');
+Editor.events = new EventEmitter();
 
 // ---------------------------
 // initialize logs/
@@ -127,12 +123,10 @@ if ( process.platform === 'darwin' ) {
     _logpath = Path.join(App.getPath('home'), 'Library/Logs/' + Editor.name );
 }
 else {
-    _logpath = App.getPath('appData');
+    _logpath = Path.join(App.getPath('appData'), Editor.name);
 }
 
-if ( !Fs.existsSync(_logpath) ) {
-    Fs.makeTreeSync(_logpath);
-}
+Fs.ensureDirSync(_logpath);
 
 var _logfile = Path.join(_logpath, Editor.name + '.log');
 if ( Fs.existsSync(_logfile) ) {
@@ -275,6 +269,7 @@ Commander.parse(process.argv);
 Editor.isDev = Commander.dev;
 Editor.devMode = Commander.devMode;
 Editor.showDevtools = Commander.showDevtools;
+Editor.debugPort = Commander.debug;
 
 // ---------------------------
 // Define Editor.App APIs
@@ -363,6 +358,14 @@ App.on('will-finish-launching', function() {
             autoSubmit: false,
         });
     }
+});
+
+//
+App.on('gpu-process-crashed', function() {
+    if ( Editor && Editor.sendToWindows ) {
+        Editor.sendToWindows('console:error', 'GPU Process Crashed!');
+    }
+    Winston.uncaught('GPU Process Crashed!');
 });
 
 //

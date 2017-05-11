@@ -1,0 +1,20 @@
+<dom-module name="editor-webview">
+    <link rel="import" type="css" href="webview.css">
+
+    <template>
+        <div class="wrapper fit">
+            <webview id="view" src="{{src}}"
+                nodeintegration
+                disablewebsecurity
+                autosize="on"
+                on-console-message="_onConsoleMessage"
+                on-ipc-message="_onIpcMessage"
+                on-did-finish-load="_onViewDidFinishLoad"
+            ></webview>
+            <editor-loader id="loader" mask text="Loading"></editor-loader>
+            <div id="dropArea" class="fit" hidden></div>
+        </div>
+    </template>
+</dom-module>
+
+<script type="text/javascript" src="webview.js"></script>

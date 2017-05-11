@@ -42,22 +42,24 @@
 .title {
     margin: 3px 8px;
     overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 #icon {
-    display: inline;
+    display: inline-block;
+    margin-right: 5px;
 }
 
 #icon img {
     width: 16px;
     height: 16px;
-    margin-bottom: -4px;
 }
 
 :host(.active) .border {
     /* border-top: 1px solid rgba(255, 255, 255, 0.2); */
     height: 21px;
-    background-color: #444;
+    background-color: #474747;
 }
 
 :host([out-of-date]) .border, :host(.active[out-of-date]) .border {

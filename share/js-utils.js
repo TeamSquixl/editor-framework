@@ -125,4 +125,27 @@ module.exports = {
             delete obj[keys[i]];
         }
     },
+
+    /**
+     * Get property by path
+     * @method getPropertyByPath
+     * @param {object} obj
+     * @param {string} path
+     */
+    getPropertyByPath: function (obj, path) {
+        if ( !obj ) return null;
+
+        if (path.indexOf('.') === -1) {
+            return obj[path];
+        }
+        else {
+            var props = path.split('.');
+            var subProp = obj;
+            for (var i = 0; i < props.length; i++) {
+                subProp = subProp[props[i]];
+                if ( !subProp ) return null;
+            }
+            return subProp;
+        }
+    },
 };

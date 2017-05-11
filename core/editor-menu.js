@@ -188,13 +188,33 @@ EditorMenu.prototype.clear = function () {
  *     message: 'foobar:say',
  *     params: ['foobar: hello!']
  * });
+ *
+ * // you can also create menu without label
+ * // it will add menu to foo/bar where bar is the menu-item
+ * var editorMenu = new Editor.Menu();
+ * editorMenu.add( 'foo/bar/foobar', {
+ *     message: 'foobar:say',
+ *     params: ['foobar: hello!']
+ * });
  * ```
  */
 EditorMenu.prototype.add = function ( path, template ) {
+    // in object mode, we should set label from path if not exists
+    if ( !Array.isArray(template) ) {
+        if ( !template.label && template.type !== 'separator' ) {
+            var start = path.lastIndexOf( '/' );
+            if ( start !== -1 ) {
+                template.label = path.slice( start + 1 );
+                path = path.slice( 0, start );
+            }
+        }
+    }
+
     EditorMenu.parseTemplate(template);
 
-    if ( !Array.isArray(template) )
+    if ( !Array.isArray(template) ) {
         template = [template];
+    }
 
     var menuItem = _getMenuItem( this.nativeMenu, path, true );
 
@@ -314,6 +334,10 @@ EditorMenu.parseTemplate = function ( template, webContents ) {
     }
 
     var args;
+
+    if ( template.label === undefined && template.type !== 'separator' ) {
+        Editor.warn('Missing label in template');
+    }
 
     if ( template.message ) {
         if ( template.click ) {

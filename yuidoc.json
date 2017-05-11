@@ -1,0 +1,19 @@
+{
+  "name": "Editor-Framework API",
+  "description": "A framework gives you power to easily write professional multi-panel desktop software in HTML5 and io.js.",
+  "version": "0.3.13",
+  "url": "http://docs.fireball-x.com/",
+  "baseurl": "/api",
+  "local": true,
+  "logo": "http://docs.fireball-x.com/images/logo.png",
+  "options": {
+    "outdir": "./apidocs",
+    "linkNatives": true,
+    "paths": [
+        "core/",
+        "page/",
+        "share/"
+    ],
+    "tabtospace": 4
+  }
+}

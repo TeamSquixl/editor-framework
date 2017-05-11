@@ -1,4 +1,8 @@
-# Editor Module
+---
+title: Editor Module
+category: editor
+permalinks: editor/editor-module
+---
 
 `Editor` is a module contains app-wide core editor functionality. You can access properties or methods of Editor module anytime, anywhere in your editor framework app (including Fireball).
 

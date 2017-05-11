@@ -83,41 +83,6 @@ function _registerShortcut ( panelID, mousetrap, frameEL, shortcut, methodName )
 }
 
 var Panel = {};
-
-Panel.import = function ( url, cb ) {
-    // DISABLE:
-    // var link = _url2link[url];
-    // if ( link ) {
-    //     HTMLImports.whenReady( function () {
-    //         cb();
-    //     });
-    //     return;
-    // }
-
-    // link = document.createElement('link');
-    // link.rel = 'import';
-    // link.href = url;
-    // // link.onload = cb;
-    // link.onerror = function(e) {
-    //     Editor.error('Failed to import %s', link.href);
-    // };
-
-    // document.head.appendChild(link);
-    // _url2link[url] = link;
-
-    // //
-    // HTMLImports.whenReady( function () {
-    //     cb();
-    // });
-
-    Polymer.Base.importHref( url, function ( event ) {
-        // event.target.import is the import document.
-        cb();
-    }, function ( err ) {
-        Editor.error( 'Failed to load %s. message: %s', url, err.message );
-    });
-};
-
 Panel.load = function ( panelID, cb ) {
     Editor.sendRequestToCore('panel:query-info', panelID, function ( panelInfo ) {
         if ( !panelInfo ) {
@@ -129,10 +94,16 @@ Panel.load = function ( panelID, cb ) {
         var Path = require('fire-path');
         var framePath = Path.join( panelInfo.path, panelInfo.frame );
 
-        Panel.import(framePath, function () {
+        EditorUI.import( framePath, function ( err ) {
+            if ( err ) {
+                Editor.error( 'Failed to import %s. message: %s', url, err.message );
+                cb ( new Error('Panel import failed.') );
+                return;
+            }
+
             var frameCtor = Editor.panels[panelID];
             if ( !frameCtor ) {
-                Editor.error('Panel import faield. Can not find constructor for panelID %s', panelID );
+                Editor.error('Can not find constructor for panelID %s', panelID );
                 cb ( new Error( panelID + '\'s constructor not found' ) );
                 return;
             }

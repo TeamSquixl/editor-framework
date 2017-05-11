@@ -29,11 +29,11 @@ Debugger.toggle = function () {
  * @method open
  */
 Debugger.open = function () {
-    dbgProcess = Spawn('node-inspector', ['--debug-port=3030'], {stdio: 'inherit'});
+    dbgProcess = Spawn('node-inspector', ['--debug-port=' + Editor.debugPort], {stdio: 'inherit'});
     Editor.MainMenu.set( 'Developer/Debug Core', {
         checked: true
     });
-    Editor.info('Visit http://127.0.0.1:8080/debug?ws=127.0.0.1:8080&port=3030 to start debugging');
+    Editor.info('Visit http://127.0.0.1:8080/debug?ws=127.0.0.1:8080&port=%s to start debugging', Editor.debugPort);
 
     // var debuggerWin = new BrowserWindow({
     //     'web-preferences': {
@@ -41,7 +41,7 @@ Debugger.open = function () {
     //         'experimental-canvas-features': true,
     //     }
     // });
-    // var url = 'http://127.0.0.1:8080/debug?ws=127.0.0.1:8080&port=3030';
+    // var url = 'http://127.0.0.1:8080/debug?ws=127.0.0.1:8080&port=4040';
     // debuggerWin.loadUrl(url);
     // debuggerWin.on ( 'closed', function () {
     //     dbgProcess.kill();

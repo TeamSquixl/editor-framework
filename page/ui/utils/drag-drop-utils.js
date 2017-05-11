@@ -13,10 +13,14 @@ EditorUI.DragDrop = (function () {
             } );
             dataTransfer.effectAllowed = effect;
             dataTransfer.dropEffect = 'none';
+            // FIXME: https://github.com/atom/electron/issues/1276
+            dataTransfer.setData('text', type);
             dataTransfer.setData('editor/type', type);
             dataTransfer.setData('editor/items', ids.join());
             var img = this.getDragIcon(items);
             dataTransfer.setDragImage(img, -10, 10);
+
+            Editor.sendToWindows('editor:dragstart');
         },
 
         drop: function ( dataTransfer ) {
@@ -32,9 +36,16 @@ EditorUI.DragDrop = (function () {
 
         end: function () {
             _allowed = false;
+            Editor.sendToWindows('editor:dragend');
         },
 
         updateDropEffect: function ( dataTransfer, dropEffect ) {
+            if ( ['copy', 'move', 'link', 'none'].indexOf(dropEffect) === -1 ) {
+                Editor.warn( 'dropEffect must be one of \'copy\', \'move\', \'link\' or \'none\'' );
+                dataTransfer.dropEffect = 'none';
+                return;
+            }
+
             if ( _allowed ) {
                 dataTransfer.dropEffect = dropEffect;
             }
@@ -110,7 +121,12 @@ EditorUI.DragDrop = (function () {
                 var item = items[i];
                 if ( i <= 4 ) {
                     // icon
-                    if ( item.icon ) {
+                    // NOTE: the icon may be broken, use naturalWidth detect this
+                    if ( item.icon &&
+                         item.icon.naturalWidth !== undefined &&
+                         item.icon.naturalWidth !== 0
+                       )
+                    {
                         imgPanel.drawImage(item.icon,0,top,16,16);
                     }
                     // text
@@ -119,7 +135,7 @@ EditorUI.DragDrop = (function () {
                 }
                 else {
                     imgPanel.fillStyle = 'gray';
-                    imgPanel.fillText('[more.....]',20,top + 15);
+                    imgPanel.fillText('[more...]',20,top + 15);
                     break;
                 }
 

@@ -1,4 +1,8 @@
-# Load and Build Packages
+---
+title: Load and Build Packages
+category: editor
+permalinks: editor/packages/load-and-build
+---
 
 Packages can be developed in any of the following file format:
 
@@ -31,7 +35,7 @@ This way you can specify any folder you like to hold all your packages and they 
 
 ## Building Package
 
-You can enable building for any loaded package, just add the property `"build": "true"` to your package's `package.json` file. 
+You can enable building for any loaded package, just add the property `"build": "true"` to your package's `package.json` file.
 
 If a package has building enabled(`"build":"true"`), Editor-framework will build the package and put the compiled file into `package-name/bin/dev` folder. Then load the package from `package-name/bin/dev`.  The `"build": "true"` property will also be removed from the compiled package's `package.json` file, making it ready to ship.
 
@@ -64,4 +68,3 @@ When 'Reload' button is clicked, Package Manager will:
 - Check if the package has building enabled. If yes, rebuild it.
 - If rebuild success, unload the package. If an error raised while compiling, don't go to next step.
 - Load the package again.
-

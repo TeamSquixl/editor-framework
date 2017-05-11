@@ -261,7 +261,7 @@ Editor.sendToAll = function () {
 Editor.sendToPanel = function ( panelID, message ) {
     var win = Editor.Panel.findWindow( panelID );
     if ( !win ) {
-        Editor.warn( "Failed to send %s, can not find panel %s.", message, panelID );
+        // Editor.warn( "Failed to send %s, can not find panel %s.", message, panelID );
         return;
     }
 

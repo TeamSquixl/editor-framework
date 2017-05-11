@@ -3,6 +3,17 @@ var Ipc = require('ipc');
 var _lastActiveUnit = null;
 var _units = {};
 
+function _sendToAll () {
+    // send _selection:xxx for sync selection data exclude self
+    var args = [].slice.call( arguments, 1 );
+    args.push(Editor.selfExcluded);
+    args.unshift('_'+arguments[0]);
+    Editor.sendToAll.apply( Editor, args );
+
+    // send selection:xxx for user
+    Editor.sendToAll.apply( Editor, arguments );
+}
+
 /**
  * Selection module
  * @module Editor.Selection
@@ -23,16 +34,17 @@ function SelectionUnit(type) {
     this.ipc_deactivated = 'selection:deactivated'; // argument is an id
     this.ipc_hoverin = 'selection:hoverin';         // argument is an id
     this.ipc_hoverout = 'selection:hoverout';       // argument is an id
+    this.ipc_context = 'selection:context';
     this.ipc_changed = 'selection:changed';
 }
 
 SelectionUnit.prototype._activate = function (id) {
     if (this.lastActive !== id) {
         if (this.lastActive) {
-            Editor.sendToAll( this.ipc_deactivated, this.type, this.lastActive );
+            _sendToAll( this.ipc_deactivated, this.type, this.lastActive );
         }
         this.lastActive = id;
-        Editor.sendToAll( this.ipc_activated, this.type, id );
+        _sendToAll( this.ipc_activated, this.type, id );
         _lastActiveUnit = this;
     }
 };
@@ -50,7 +62,7 @@ SelectionUnit.prototype._unselectOthers = function (id) {
             }
         }
         if (unselected.length > 0) {
-            Editor.sendToAll(this.ipc_unselected, this.type, unselected);
+            _sendToAll(this.ipc_unselected, this.type, unselected);
             changed = true;
         }
     }
@@ -59,14 +71,14 @@ SelectionUnit.prototype._unselectOthers = function (id) {
         if (index !== -1) {
             this.selection.splice(index, 1);
             if (this.selection.length > 0) {
-                Editor.sendToAll(this.ipc_unselected, this.type, this.selection);
+                _sendToAll(this.ipc_unselected, this.type, this.selection);
                 changed = true;
             }
             this.selection = [id];
         }
         else {
             if (this.selection.length > 0) {
-                Editor.sendToAll(this.ipc_unselected, this.type, this.selection);
+                _sendToAll(this.ipc_unselected, this.type, this.selection);
                 changed = true;
             }
             this.selection.length = 0;
@@ -87,7 +99,7 @@ SelectionUnit.prototype.select = function (id, unselectOthers) {
         // single
         if (this.selection.indexOf(id) === -1) {
             this.selection.push(id);
-            Editor.sendToAll(this.ipc_selected, this.type, [id]);
+            _sendToAll(this.ipc_selected, this.type, [id]);
             changed = true;
         }
         this._activate(id);
@@ -102,14 +114,14 @@ SelectionUnit.prototype.select = function (id, unselectOthers) {
             }
         }
         if (diff.length > 0) {
-            Editor.sendToAll(this.ipc_selected, this.type, diff);
+            _sendToAll(this.ipc_selected, this.type, diff);
             changed = true;
         }
         this._activate(id[id.length - 1]);
     }
 
     if ( changed )
-        Editor.sendToAll(this.ipc_changed, this.type);
+        _sendToAll(this.ipc_changed, this.type);
 };
 
 SelectionUnit.prototype.unselect = function (id) {
@@ -121,7 +133,7 @@ SelectionUnit.prototype.unselect = function (id) {
         var index = this.selection.indexOf(id);
         if (index !== -1) {
             this.selection.splice(index, 1);
-            Editor.sendToAll(this.ipc_unselected, this.type, [id]);
+            _sendToAll(this.ipc_unselected, this.type, [id]);
             unselectActiveObj = (id === this.lastActive);
             changed = true;
         }
@@ -138,7 +150,7 @@ SelectionUnit.prototype.unselect = function (id) {
             }
         }
         if (diff.length > 0) {
-            Editor.sendToAll(this.ipc_unselected, this.type, diff);
+            _sendToAll(this.ipc_unselected, this.type, diff);
             changed = true;
         }
     }
@@ -149,28 +161,29 @@ SelectionUnit.prototype.unselect = function (id) {
             this._activate(this.selection[this.selection.length - 1]);
         }
         else {
-            this._activate('');
+            this._activate(null);
         }
     }
 
     if ( changed )
-        Editor.sendToAll(this.ipc_changed, this.type);
+        _sendToAll(this.ipc_changed, this.type);
 };
 
 SelectionUnit.prototype.hover = function (id) {
     if ( this.lastHover !== id ) {
         if ( this.lastHover ) {
-            Editor.sendToAll(this.ipc_hoverout, this.type, this.lastHover);
+            _sendToAll(this.ipc_hoverout, this.type, this.lastHover);
         }
         this.lastHover = id;
         if ( id ) {
-            Editor.sendToAll(this.ipc_hoverin, this.type, id);
+            _sendToAll(this.ipc_hoverin, this.type, id);
         }
     }
 };
 
 SelectionUnit.prototype.setContext = function (id) {
     this._context = id;
+    _sendToAll(this.ipc_context, this.type, id);
 };
 
 Object.defineProperty(SelectionUnit.prototype, 'contexts', {
@@ -198,11 +211,11 @@ Object.defineProperty(SelectionUnit.prototype, 'contexts', {
 });
 
 SelectionUnit.prototype.clear = function () {
-    Editor.sendToAll(this.ipc_unselected, this.type, this.selection);
+    _sendToAll(this.ipc_unselected, this.type, this.selection);
     this.selection.length = 0;
-    this._activate('');
+    this._activate(null);
 
-    Editor.sendToAll(this.ipc_changed, this.type);
+    _sendToAll(this.ipc_changed, this.type);
 };
 
 // ConfirmableSelectionUnit
@@ -248,7 +261,12 @@ ConfirmableSelectionUnit.prototype.confirm = function () {
     if ( !this.confirmed ) {
         this._confirmedSnapShot.length = 0;
         this.confirmed = true;
-        this._activate(this.selection[this.selection.length - 1]);
+        if ( this.selection.length > 0 ) {
+            this._activate(this.selection[this.selection.length - 1]);
+        }
+        else {
+            this._activate(null);
+        }
     }
 };
 
@@ -318,16 +336,20 @@ var Selection = {
             return;
         }
 
+        var lastActiveBeforeSelect = selectionUnit.lastActive;
+        var lastActiveUnitBeforeSelect = _lastActiveUnit;
+
         unselectOthers = unselectOthers !== undefined ? unselectOthers : true;
         confirm = confirm !== undefined ? confirm : true;
+
         selectionUnit.select(id, unselectOthers, confirm);
-
-        if ( _lastActiveUnit !== selectionUnit &&
-             selectionUnit.confirmed &&
-             selectionUnit.lastActive ) {
+        if ( selectionUnit.confirmed ) {
             _lastActiveUnit = selectionUnit;
-
-            Editor.sendToAll('selection:activated', type, selectionUnit.lastActive);
+            if ( lastActiveUnitBeforeSelect !== _lastActiveUnit ||
+                lastActiveBeforeSelect !== selectionUnit.lastActive )
+            {
+                _sendToAll('selection:activated', type, selectionUnit.lastActive);
+            }
         }
     },
 
@@ -446,6 +468,21 @@ var Selection = {
     },
 
     /**
+     * @method curGlobalActivate
+     * @return {object} - { type, id }
+     */
+    curGlobalActivate: function () {
+        if ( !_lastActiveUnit ) {
+            return null;
+        }
+
+        return {
+            type: _lastActiveUnit.type,
+            id: _lastActiveUnit.lastActive,
+        };
+    },
+
+    /**
      * @method curSelection
      * @param {string} type
      * @return {string[]} selected list
@@ -520,7 +557,7 @@ module.exports = Selection;
 
 // recv ipc message and update the local data
 
-Ipc.on( 'selection:selected', function ( type, ids ) {
+Ipc.on( '_selection:selected', function ( type, ids ) {
     var selectionUnit = _units[type];
     if ( !selectionUnit ) {
         Editor.error('Can not find the type %s for selection, please register it first', type);
@@ -543,7 +580,7 @@ Ipc.on( 'selection:selected', function ( type, ids ) {
     }
 });
 
-Ipc.on( 'selection:unselected', function ( type, ids ) {
+Ipc.on( '_selection:unselected', function ( type, ids ) {
     var selectionUnit = _units[type];
     if ( !selectionUnit ) {
         Editor.error('Can not find the type %s for selection, please register it first', type);
@@ -555,17 +592,31 @@ Ipc.on( 'selection:unselected', function ( type, ids ) {
     });
 });
 
-Ipc.on( 'selection:activated', function ( type, id ) {
+Ipc.on( '_selection:activated', function ( type, id ) {
     var selectionUnit = _units[type];
     if ( !selectionUnit ) {
         Editor.error('Can not find the type %s for selection, please register it first', type);
         return;
     }
 
+    _lastActiveUnit = selectionUnit;
     selectionUnit.lastActive = id;
 });
 
-Ipc.on( 'selection:hoverin', function ( type, id ) {
+Ipc.on( '_selection:deactivated', function ( type, id ) {
+    var selectionUnit = _units[type];
+    if ( !selectionUnit ) {
+        Editor.error('Can not find the type %s for selection, please register it first', type);
+        return;
+    }
+
+    if ( _lastActiveUnit === selectionUnit ) {
+        _lastActiveUnit = null;
+    }
+    selectionUnit.lastActive = null;
+});
+
+Ipc.on( '_selection:hoverin', function ( type, id ) {
     var selectionUnit = _units[type];
     if ( !selectionUnit ) {
         Editor.error('Can not find the type %s for selection, please register it first', type);
@@ -575,7 +626,7 @@ Ipc.on( 'selection:hoverin', function ( type, id ) {
     selectionUnit.lastHover = id;
 });
 
-Ipc.on( 'selection:hoverout', function ( type, id ) {
+Ipc.on( '_selection:hoverout', function ( type, id ) {
     var selectionUnit = _units[type];
     if ( !selectionUnit ) {
         Editor.error('Can not find the type %s for selection, please register it first', type);
@@ -583,6 +634,16 @@ Ipc.on( 'selection:hoverout', function ( type, id ) {
     }
 
     selectionUnit.lastHover = null;
+});
+
+Ipc.on( '_selection:context', function ( type, id ) {
+    var selectionUnit = _units[type];
+    if ( !selectionUnit ) {
+        Editor.error('Can not find the type %s for selection, please register it first', type);
+        return;
+    }
+
+    selectionUnit._context = id;
 });
 
 // ==========================
@@ -600,6 +661,7 @@ if ( Editor.isCoreLevel ) {
                 lastActive: selectionUnit.lastActive,
                 lastHover: selectionUnit.lastHover,
                 context: selectionUnit._context,
+                isLastGlobalActive: selectionUnit === _lastActiveUnit,
             });
         }
         event.returnValue = results;
@@ -621,6 +683,10 @@ if ( Editor.isPageLevel ) {
             selectionUnit._context = info.context;
 
             _units[info.type] = selectionUnit;
+
+            if ( info.isLastGlobalActive ) {
+                _lastActiveUnit = selectionUnit;
+            }
         }
     })();
 }

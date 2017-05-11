@@ -1,4 +1,8 @@
-# Define Your App
+---
+title: Define Your App
+category: editor
+permalinks: editor/define-your-app
+---
 
 To run your app with editor-framework, you should download and put `editor-framework` into your app folder. You also need to create a `package.json` file in your app's root folder, and set its main to your app.js.
 
@@ -30,8 +34,6 @@ Here is an example:
 ```javascript
 // you MUST assigned to global.__app
 global.__app = {
-    path: __dirname, // must have, important
-
     initCommander: function ( commander ) {
         // optional
     },

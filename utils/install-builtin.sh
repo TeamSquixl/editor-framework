@@ -6,30 +6,19 @@ if [ ! -d "builtin" ]; then
 fi
 cd builtin
 
-# builtin panels
-if [ ! -d "console" ]; then
-    git clone https://github.com/fireball-packages/console
-fi
+repos=( \
+console \
+ipc-debugger \
+package-manager \
+tester \
+ui-kit \
+)
 
-if [ ! -d "ipc-debugger" ]; then
-    git clone https://github.com/fireball-packages/ipc-debugger
-fi
-
-if [ ! -d "package-manager" ]; then
-    git clone https://github.com/fireball-packages/package-manager
-fi
-
-if [ ! -d "tester" ]; then
-    git clone https://github.com/fireball-packages/tester
-fi
-
-# builtin widgets
-if [ ! -d "ui-kit" ]; then
-    git clone https://github.com/fireball-packages/ui-kit
-fi
-
-if [ ! -d "pixi-grid" ]; then
-    git clone https://github.com/fireball-packages/pixi-grid
-fi
+for name in "${repos[@]}"
+do
+    if [ ! -d "${name}" ]; then
+        git clone https://github.com/fireball-packages/${name}
+    fi
+done
 
 cd ${ORIGINAL_PATH}

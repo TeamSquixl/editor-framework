@@ -3,6 +3,15 @@ var Url = require('fire-url');
 var Path = require('fire-path');
 var Fs = require('fire-fs');
 
+function protocolRegisterCallback ( err, scheme ) {
+    if ( err ) {
+        Editor.failed( 'Failed to register protocol %s, %s', scheme, err.message );
+        return;
+    }
+    Editor.success( 'protocol %s registerred', scheme );
+}
+Editor.protocolRegisterCallback = protocolRegisterCallback;
+
 /**
  * @module Editor
  */
@@ -12,70 +21,70 @@ var Fs = require('fire-fs');
 // register protocol editor-framework://
 Protocol.registerProtocol('editor-framework', function(request) {
     var url = decodeURIComponent(request.url);
-    var data = Url.parse(url);
-    var relativePath = data.hostname;
-    if ( data.pathname ) {
-        relativePath = Path.join( relativePath, data.pathname );
+    var uri = Url.parse(url);
+    var relativePath = uri.hostname;
+    if ( uri.pathname ) {
+        relativePath = Path.join( relativePath, uri.pathname );
     }
     var file = Path.join( Editor.frameworkPath, relativePath );
     return new Protocol.RequestFileJob(file);
-});
+}, protocolRegisterCallback );
 
 // register protocol app://
 Protocol.registerProtocol('app', function(request) {
     var url = decodeURIComponent(request.url);
-    var data = Url.parse(url);
-    var relativePath = data.hostname;
-    if ( data.pathname ) {
-        relativePath = Path.join( relativePath, data.pathname );
+    var uri = Url.parse(url);
+    var relativePath = uri.hostname;
+    if ( uri.pathname ) {
+        relativePath = Path.join( relativePath, uri.pathname );
     }
     var file = Path.join( Editor.appPath, relativePath );
     return new Protocol.RequestFileJob(file);
-});
+}, protocolRegisterCallback );
 
 // register protocol packages://
 
 Protocol.registerProtocol('packages', function(request) {
     var url = decodeURIComponent(request.url);
-    var data = Url.parse(url);
+    var uri = Url.parse(url);
 
-    var packagePath = Editor.Package.packagePath(data.hostname);
+    var packagePath = Editor.Package.packagePath(uri.hostname);
     if ( packagePath ) {
         var packageInfo = Editor.Package.packageInfo(packagePath);
         if ( packageInfo ) {
-            var file = Path.join( packageInfo._destPath, data.pathname );
+            var file = Path.join( packageInfo._destPath, uri.pathname );
             return new Protocol.RequestFileJob(file);
         }
     }
     return new Protocol.RequestErrorJob(-6); // net::ERR_FILE_NOT_FOUND
-});
+}, protocolRegisterCallback );
 
 // DISABLE: this make protocol can not use relative path
 // // register protocol bower://
 // Protocol.registerProtocol('bower', function(request) {
 //     var url = decodeURIComponent(request.url);
-//     var data = Url.parse(url);
-//     var relativePath = data.hostname;
-//     if ( data.pathname ) {
-//         relativePath = Path.join( relativePath, data.pathname );
+//     var uri = Url.parse(url);
+//     var relativePath = uri.hostname;
+//     if ( uri.pathname ) {
+//         relativePath = Path.join( relativePath, uri.pathname );
 //     }
 //     var file = Path.join( Editor.appPath, 'bower_components', relativePath );
 //     return new Protocol.RequestFileJob(file);
-// });
+// }, protocolRegisterCallback );
 
 // DISABLE: same reason as bower
 // // register protocol widgets://
 // Protocol.registerProtocol('widgets', function(request) {
 //     var url = decodeURIComponent(request.url);
-//     var data = Url.parse(url);
+//     var uri = Url.parse(url);
 
-//     var info = Editor.Package.widgetInfo(data.hostname);
+//     var info = Editor.Package.widgetInfo(uri.hostname);
 //     if ( info ) {
-//         var file = Path.join( info.path, data.pathname );
+//         var file = Path.join( info.path, uri.pathname );
 //         return new Protocol.RequestFileJob(file);
 //     }
 //     return new Protocol.RequestErrorJob(-6); // net::ERR_FILE_NOT_FOUND
-// });
+// }, protocolRegisterCallback );
 
 // Editor.url protocol register
 
@@ -125,15 +134,6 @@ Editor.url = function ( url ) {
     }
 
     return fn(urlInfo);
-};
-
-/**
- * Require module through url path
- * @method require
- * @param {string} url
- */
-Editor.require = function ( url ) {
-    return require( Editor.url(url) );
 };
 
 /**

@@ -1,6 +1,6 @@
 {
     "name": "editor-framework",
-    "version": "0.3.9",
+    "version": "0.3.15",
     "description": "A simple framework for making panel based applications.",
     "homepage": "http://fireball-x.com",
     "repository": {
@@ -13,44 +13,45 @@
         "url": "https://github.com/fireball-x/editor-framework/issues"
     },
     "scripts": {
+        "preinstall": "npm install npmconf@2.1.2 && node ./utils/pre-install-npm.js",
+        "postinstall": "gulp post-install-npm",
+        "install": "gulp bootstrap && bower install && gulp npm-rebuild && gulp update",
         "test": "node utils/run-tests.js",
-        "api-core": "jsdoc -c ./jsdoc-core.conf.json",
-        "api-page": "jsdoc -c ./jsdoc-page.conf.json"
+        "api": "firedoc build ./ --theme notab"
     },
     "dependencies": {
-        "async": "1.2.1",
-        "chai": "2.3.0",
-        "chalk": "1.0.0",
-        "chokidar": "1.0.2",
+        "async": "1.4.2",
+        "chai": "3.2.0",
+        "chalk": "1.1.0",
+        "chokidar": "1.0.5",
         "commander": "2.8.1",
-        "del": "1.2.0",
-        "fire-fs": "0.1.9",
+        "del": "1.2.1",
+        "diff": "2.0.2",
+        "fire-fs": "0.2.1",
         "fire-path": "0.1.7",
         "fire-url": "0.1.6",
-        "globby": "2.0.0",
+        "globby": "2.1.0",
         "gulp": "3.8.11",
-        "gulp-babel": "5.1.0",
+        "gulp-babel": "5.2.0",
         "gulp-less": "3.0.3",
-        "gulp-sequence": "0.3.2",
-        "gulp-stylus": "2.0.3",
-        "diff": "1.4.0",
-        "lodash": "3.9.3",
+        "gulp-sequence": "0.4.0",
+        "gulp-stylus": "2.0.6",
+        "lodash": "3.10.1",
         "mocha": "2.2.5",
-        "semver": "4.3.6",
-        "sinon": "1.15.0",
-        "winston": "1.0.0"
+        "semver": "5.0.1",
+        "sinon": "1.15.4",
+        "winston": "1.0.1"
     },
     "devDependencies": {
-        "gulp-changed": "1.2.1",
-        "gulp-download-fire-shell": "0.1.3",
-        "gulp-jshint": "1.11.0",
-        "gulp-shell": "0.4.1",
+        "check-dependencies": "0.9.5",
+        "firedoc": "1.9.2",
+        "gulp-changed": "1.3.0",
+        "gulp-jshint": "1.11.2",
         "gulp-watch": "4.2.4",
-        "jaguarjs-jsdoc": "git+https://github.com/davidshimjs/jaguarjs-jsdoc.git",
-        "jsdoc": "3.3.0",
-        "jshint-stylish": "2.0.0"
+        "jshint-stylish": "2.0.1",
+        "npmconf": "2.1.2"
     },
-    "shared-packages": [
+    "sharedPackages": [
         "benchmark",
         "package-examples"
     ],
@@ -59,10 +60,11 @@
         "ipc-debugger",
         "package-manager",
         "tester",
-        "ui-kit",
-        "pixi-grid"
+        "ui-kit"
     ],
-    "fire-shell-version": "0.24.0",
-    "electron-version": "0.28.3",
+    "nativeModules": [
+        "chokidar"
+    ],
+    "electronVersion": "0.30.5",
     "main": "demo.js"
 }

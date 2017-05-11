@@ -81,11 +81,18 @@ EditorUI.Panel = Polymer({
     },
 
     _onFocusIn: function ( event ) {
+        this._losingFocus = false;
         this._setFocused(true);
     },
 
     _onFocusOut: function ( event ) {
-        this._setFocused(false);
+        this._losingFocus = true;
+
+        this.async(function () {
+            if ( this._losingFocus ) {
+                this._setFocused(false);
+            }
+        }.bind(this),1);
     },
 
     _initTabs: function () {

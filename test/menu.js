@@ -39,4 +39,15 @@ describe('Editor.Menu', function() {
 
         done();
     });
+
+    it('should add menu item through template without label', function (done) {
+        var testMenu = new Editor.Menu();
+        testMenu.add('tar/zom', {'message': 'hint'});
+
+        expect( testMenu.nativeMenu.items[0].label ).to.equal('tar');
+        expect( testMenu.nativeMenu.items[0].submenu.items[0].label ).to.equal('zom');
+
+        done();
+    });
+
 });

@@ -23,9 +23,12 @@ bower_components/
 bin/
 ext/
 builtin/
+apidocs/
 api/
 benchmark/
 package-examples/
+mirror-setting.json
+local-setting.json
 
 # webstorm
 .idea
